@@ -11,15 +11,31 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      
-      - name: Cari folder project
+
+      - name: Ekstrak ZIP otomatis
         run: |
           ls -la
-          # cari dimana settings.gradle berada
-          DIR=$(find . -name "settings.gradle*" | head -1 | xargs dirname)
+          sudo apt-get update && sudo apt-get install -y unzip
+          # ekstrak semua zip
+          for z in *.zip; do
+            if [ -f "$z" ]; then
+              echo "Ekstrak $z"
+              unzip -o "$z"
+              rm "$z"
+            fi
+          done
+          ls -la
+
+      - name: Cari folder project
+        run: |
+          DIR=$(find . -type f -name "settings.gradle*" | head -1 | xargs dirname)
+          if [ -z "$DIR" ]; then
+            DIR=$(find . -type f -name "gradlew" | head -1 | xargs dirname)
+          fi
+          if [ -z "$DIR" ]; then DIR="."; fi
           echo "PROJECT_DIR=$DIR" >> $GITHUB_ENV
-          echo "Project ada di $DIR"
-          ls -la $DIR
+          echo "Project ketemu di: $DIR"
+          ls -la "$DIR"
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
@@ -35,4 +51,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: FRYCO-REMOTE-APK
-          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
